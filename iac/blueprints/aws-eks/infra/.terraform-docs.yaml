@@ -1,0 +1,53 @@
+content: |-
+  # AWS EKS Blueprints
+
+  {{ .Providers }}
+
+  {{ .Requirements }}
+
+  {{ .Inputs }}
+
+  {{ .Modules }}
+
+  {{ .Resources }}
+
+  {{ .Outputs }}
+
+formatter: markdown document
+
+output:
+  file: ./README.md
+  mode: replace
+  template: |-
+    <!-- BEGIN_TF_DOCS -->
+    {{ .Content }}
+    <!-- END_TF_DOCS -->
+
+output-values:
+  enabled: false
+  from: ""
+
+sections:
+  hide: []
+  show: []
+
+settings:
+  anchor: false
+  color: true
+  default: true
+  description: true
+  escape: true
+  hide-empty: false
+  html: false
+  indent: 2
+  lockfile: true
+  read-comments: true
+  required: true
+  sensitive: true
+  type: true
+
+sort:
+  by: required
+  enabled: true
+
+version: ""

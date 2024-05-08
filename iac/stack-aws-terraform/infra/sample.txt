@@ -1,0 +1,74 @@
+# AWS
+aws_region  = 
+aws_profile = 
+account_id  = 
+iam_user    = 
+
+# ENV
+environment = 
+
+# Bucket S3
+bucket_acl  = 
+bucket_code = 
+bucket_logs = 
+
+# ECS
+cluster_name            = 
+ecs_task_execution_role = 
+task_name               = 
+ecs_service_name        = 
+
+# ACM
+certificate_arn = 
+
+# Load Balancer
+lb_name      = 
+target_group = 
+
+# Redis
+elasticache_cluster        = 
+elisticache_nodes          = 
+elasticache_engine         = 
+elasticache_node_type      = 
+elasticache_group          = 
+elasticache_engine_version = 
+elastic_sbnt               = 
+
+# ECR
+iam_ecr_policy = 
+ecr_image      = 
+
+# SNS
+sns_name       = 
+iam_sns_policy = 
+
+# Cognito
+cognito_user_pool = 
+cognito_client    = 
+cognito_domain    = 
+
+# Postgres
+rds_description   = 
+postgres_dbname   = 
+postgres_username = 
+postgres_password = 
+postgres_port     = 
+
+# Records
+record_name = 
+domain      = 
+zones       = 
+rds_record  = 
+
+# Security Group
+sg_name  = 
+sg_redis = 
+
+# VPC
+ingress_description = 
+vpc_name            = 
+vpc_cidr            = []
+subnet_group_name   = 
+public_subnets      = []
+private_subnets     = []
+elasticache_subnets = []
