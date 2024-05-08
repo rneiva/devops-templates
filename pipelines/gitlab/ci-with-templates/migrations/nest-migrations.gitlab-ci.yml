@@ -1,0 +1,17 @@
+.nest-default: &nest-default
+  image: node:18.15.0-alpine3.16
+
+stages:
+  - migrations
+
+migrations:
+  <<: *nest-default
+  stage: migrations
+  script:
+    - npm ci
+    - npm run migration:up
+  cache:
+    paths:
+      - node_modules/
+  tags:
+    - api

@@ -1,0 +1,90 @@
+scripts:
+  - name: Remove firebase dependencies from iOS
+    script: |
+      #!/bin/sh
+      set -e
+      set -x
+      cd $FCI_BUILD_DIR
+      mv package.json package-firebase.json
+      echo "{" >> package.json
+      echo "  \"name\": \"myapp\"," >> package.json
+      echo "  \"version\": \"0.0.1\"," >> package.json
+      echo "  \"private\": true," >> package.json
+      echo "  \"scripts\": {" >> package.json
+      echo "    \"android\": \"react-native run-android\"," >> package.json
+      echo "    \"release\": \"react-native run-android --variant=release\"," >> package.json
+      echo "    \"ios\": \"react-native run-ios\"," >> package.json
+      echo "    \"start\": \"react-native start\"," >> package.json
+      echo "    \"test\": \"jest\"," >> package.json
+      echo "    \"lint\": \"eslint . --ext .js,.jsx,.ts,.tsx\"" >> package.json
+      echo "  }," >> package.json
+      echo "  \"dependencies\": {" >> package.json
+      echo "    \"@hookform/resolvers\": \"^2.8.8\"," >> package.json
+      echo "    \"@react-native-async-storage/async-storage\": \"^1.17.0\"," >> package.json
+      echo "    \"@react-native-community/checkbox\": \"^0.5.12\"," >> package.json
+      echo "    \"@react-navigation/bottom-tabs\": \"^6.3.1\"," >> package.json
+      echo "    \"@react-navigation/native\": \"^6.0.8\"," >> package.json
+      echo "    \"@react-navigation/native-stack\": \"^6.5.0\"," >> package.json
+      echo "    \"axios\": \"^0.26.1\"," >> package.json
+      echo "    \"cep-promise\": \"^4.2.0\"," >> package.json
+      echo "    \"lottie-ios\": \"3.4.0\"," >> package.json
+      echo "    \"lottie-react-native\": \"^5.1.4\"," >> package.json
+      echo "    \"moment\": \"^2.29.3\"," >> package.json
+      echo "    \"react\": \"17.0.2\"," >> package.json
+      echo "    \"react-hook-form\": \"^7.28.1\"," >> package.json
+      echo "    \"react-native\": \"0.67.4\"," >> package.json
+      echo "    \"react-native-blob-util\": \"^0.16.0\"," >> package.json
+      echo "    \"react-native-calendar-strip\": \"^2.2.5\"," >> package.json
+      echo "    \"react-native-device-info\": \"^9.0.2\"," >> package.json
+      echo "    \"react-native-dropdown-picker\": \"^5.4.2\"," >> package.json
+      echo "    \"react-native-iphone-x-helper\": \"^1.3.1\"," >> package.json
+      echo "    \"react-native-mask-input\": \"^1.2.0\"," >> package.json
+      echo "    \"react-native-pdf\": \"^6.5.0\"," >> package.json
+      echo "    \"react-native-permissions\": \"^3.3.1\"," >> package.json
+      echo "    \"react-native-safe-area-context\": \"^4.2.2\"," >> package.json
+      echo "    \"react-native-screens\": \"^3.15.0\"," >> package.json
+      echo "    \"react-native-select-dropdown\": \"^1.13.0\"," >> package.json
+      echo "    \"react-native-share\": \"^7.9.1\"," >> package.json
+      echo "    \"react-native-simple-radio-button\": \"^2.7.4\"," >> package.json
+      echo "    \"react-native-svg\": \"^12.3.0\"," >> package.json
+      echo "    \"react-native-toast-message\": \"^2.1.5\"," >> package.json
+      echo "    \"react-native-webview\": \"^11.18.1\"," >> package.json
+      echo "    \"styled-components\": \"^5.3.3\"," >> package.json
+      echo "    \"yup\": \"^0.32.11\"" >> package.json
+      echo "  }," >> package.json
+      echo "  \"devDependencies\": {" >> package.json
+      echo "    \"@babel/core\": \"^7.12.9\"," >> package.json
+      echo "    \"@babel/runtime\": \"^7.12.5\"," >> package.json
+      echo "    \"@react-native-community/eslint-config\": \"^2.0.0\"," >> package.json
+      echo "    \"@types/jest\": \"^26.0.23\"," >> package.json
+      echo "    \"@types/react-native\": \"^0.66.15\"," >> package.json
+      echo "    \"@types/react-native-simple-radio-button\": \"^2.7.2\"," >> package.json
+      echo "    \"@types/react-native-vector-icons\": \"^6.4.10\"," >> package.json
+      echo "    \"@types/react-test-renderer\": \"^17.0.1\"," >> package.json
+      echo "    \"@types/styled-components-react-native\": \"^5.1.3\"," >> package.json
+      echo "    \"@typescript-eslint/eslint-plugin\": \"^5.7.0\"," >> package.json
+      echo "    \"@typescript-eslint/parser\": \"^5.7.0\"," >> package.json
+      echo "    \"babel-jest\": \"^26.6.3\"," >> package.json
+      echo "    \"eslint\": \"^7.14.0\"," >> package.json
+      echo "    \"git-commit-msg-linter\": \"^4.1.1\"," >> package.json
+      echo "    \"jest\": \"^26.6.3\"," >> package.json
+      echo "    \"metro-react-native-babel-preset\": \"^0.66.2\"," >> package.json
+      echo "    \"react-native-svg-transformer\": \"^1.0.0\"," >> package.json
+      echo "    \"react-test-renderer\": \"17.0.2\"," >> package.json
+      echo "    \"typescript\": \"^4.4.4\"" >> package.json
+      echo "  }," >> package.json
+      echo "  \"resolutions\": {" >> package.json
+      echo "    \"@types/react\": \"^17\"" >> package.json
+      echo "  }," >> package.json
+      echo "  \"jest\": {" >> package.json
+      echo "    \"preset\": \"react-native\"," >> package.json
+      echo "    \"moduleFileExtensions\": [" >> package.json
+      echo "      \"ts\"," >> package.json
+      echo "      \"tsx\"," >> package.json
+      echo "      \"js\"," >> package.json
+      echo "      \"jsx\"," >> package.json
+      echo "      \"json\"," >> package.json
+      echo "      \"node\"" >> package.json
+      echo "    ]" >> package.json
+      echo "  }" >> package.json
+      echo "}" >> package.json

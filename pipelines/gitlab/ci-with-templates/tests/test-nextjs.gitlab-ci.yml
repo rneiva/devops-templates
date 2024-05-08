@@ -1,0 +1,98 @@
+variables:
+  TZ: America/Sao_Paulo 
+  APPLICATION_MODE: ci-cd
+  MYSQL_DATABASE: test-db
+  MYSQL_ROOT_PASSWORD: root
+  MYSQL_HOST: mysql
+
+.node18-chrome: &chrome107
+  image: cypress/browsers:node18.12.0-chrome107
+
+.node16-chrome: &chrome107-ff107-edge 
+  image: cypress/browsers:node16.16.0-chrome107-ff107-edge
+
+.next-default: &next
+  image: node:18.15.0-alpine3.16
+  services:
+    - mysql
+
+stages:
+ - npm
+ - test-component
+ - test-e2e
+
+npm:
+  <<: *next
+  stage: npm
+  before_script:
+    - npm config set registry ${CI_NPM_REGISTRY}
+    - npm ci
+  script:
+    - npm run build 
+  cache:
+    paths:
+      - node_modules/
+  artifacts:
+    expire_in: 1 days
+    when: on_success
+    paths:
+      - node_modules/
+      - .next/
+  only:
+    - merge_requests
+    - develop
+    - master
+
+test-component:
+  <<: *next
+  <<: *chrome107-ff107-edge
+  stage: test-component
+  script:   
+    - npm ci 
+    - npm run test:component   
+  artifacts:
+    expire_in: 1 days
+    when: on_success
+    paths:
+      - coverage/
+    reports:      
+      cobertura: coverage/cobertura-coverage.xml
+  only:
+    - merge_requests
+    - develop
+    - master
+
+test-e2e:
+  <<: *next
+  <<: *chrome107
+  stage: test-e2e
+  script:
+    - npm ci    
+    - npm run test:e2e    
+  artifacts:
+    expire_in: 1 days
+    when: on_success
+    paths:
+      - coverage/
+    reports:      
+      cobertura: coverage/cobertura-coverage.xml
+  only:
+    - merge_requests
+    - develop
+    - master
+
+# upload-coverage:
+#  <<: *next-default
+#  stage: upload-coverage
+#  dependencies:
+#    - test-e2e 
+#  script:
+#    - echo "Define variables of Firebase"
+#    - export HOST_FB=${CI_PROJECT_NAME} && export WEB_FB=coverage-${CI_PROJECT_NAME}
+#    - npm install -g firebase-tools
+#    - firebase target:apply hosting ${HOST_FB} ${WEB_FB} --token $FIREBASE_TOKEN
+#    - firebase deploy --token ${FIREBASE_TOKEN}
+#  only:
+#    - develop   
+#    - merge_requests
+

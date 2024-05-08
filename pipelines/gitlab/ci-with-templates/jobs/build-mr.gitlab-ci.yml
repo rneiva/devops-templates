@@ -1,0 +1,66 @@
+build:
+  stage: build
+  image:
+    name: google/cloud-sdk:latest
+    entrypoint: [""]
+  services:
+    - docker:dind
+  script:
+    - echo "Set up .env.local & accept all MR's..."
+    - |
+     case $CI_COMMIT_BRANCH:$CI_MERGE_REQUEST_TARGET_BRANCH_NAME in
+      "main":*)
+          echo "This job was triggered on branch $CI_COMMIT_BRANCH"
+          echo "Creating .env to Production..."
+          echo "$ENV_PRODUCTION" > .env.local
+          export $(cat .env.local | xargs)
+          ;;
+      "staging":*)
+          echo "This job was triggered on branch $CI_COMMIT_BRANCH"
+          echo "Creating .env to Staging..."
+          echo "$ENV_STAGING" > .env.local
+          export $(cat .env.local | xargs)
+          ;;
+      "qa":*)
+          echo "This job was triggered on branch $CI_COMMIT_BRANCH"
+          echo "Creating .env to QA..."
+          echo "$ENV_QA" > .env.local
+          export $(cat .env.local | xargs)
+          ;;
+      "dev":*)
+          echo "This job was triggered on branch $CI_COMMIT_BRANCH"
+          echo "Creating .env to DEV..."
+          echo "$ENV_DEVELOPMENT" > .env.local
+          export $(cat .env.local | xargs)
+          ;;
+      esac
+    - echo "Checking Branch and create GCP variables..."
+    - |
+      case $CI_COMMIT_BRANCH in
+        "main")
+          echo "Configuring Google Credentials - Production"
+          echo ${GOOGLE_CREDENTIALS_JSON_PRD} > /tmp/$CI_PIPELINE_ID.json
+          ;;
+        "staging")
+          echo "Configuring Google Credentials - Staging"
+          echo ${GOOGLE_CREDENTIALS_JSON_STG} > /tmp/$CI_PIPELINE_ID.json
+          ;;
+        "qa")
+          echo "Configuring Google Credentials - QA"
+          echo ${GOOGLE_CREDENTIALS_JSON_QA} > /tmp/$CI_PIPELINE_ID.json
+          ;;
+        "dev")
+          echo "Configuring Google Credentials - Development"
+          echo ${GOOGLE_CREDENTIALS_JSON_DEV} > /tmp/$CI_PIPELINE_ID.json
+          ;;
+      esac
+    - gcloud auth activate-service-account --key-file /tmp/$CI_PIPELINE_ID.json
+    - gcloud config set project ${PROJECT_ID}
+    - echo "Building image..."
+    - docker build -t ${IMAGE_NAME} .
+    - docker tag ${IMAGE_NAME} ${ARTIFACT_REGISTRY_HOSTNAME}/${PROJECT_ID}/${GKE_REPOSITORY}/${IMAGE_NAME}:${CI_COMMIT_SHA}
+    - docker tag ${IMAGE_NAME} ${ARTIFACT_REGISTRY_HOSTNAME}/${PROJECT_ID}/${GKE_REPOSITORY}/${IMAGE_NAME}:${TAG_LATEST}
+    - gcloud auth configure-docker ${ARTIFACT_REGISTRY_HOSTNAME} --quiet
+    - echo "Pushing image..."
+    - docker push ${ARTIFACT_REGISTRY_HOSTNAME}/${PROJECT_ID}/${GKE_REPOSITORY}/${IMAGE_NAME}:${CI_COMMIT_SHA}
+    - docker push ${ARTIFACT_REGISTRY_HOSTNAME}/${PROJECT_ID}/${GKE_REPOSITORY}/${IMAGE_NAME}:${TAG_LATEST}

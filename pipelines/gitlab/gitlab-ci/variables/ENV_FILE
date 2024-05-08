@@ -1,0 +1,28 @@
+#DATABASE - MYSQL
+DB_HOSTNAME=<db_host>
+DB_PORT=3306
+DB_NAME=<db_name>
+DB_USERNAME=<sdb_user>
+DB_PASSWORD=<db_pass>
+
+REDIS_URL=redis://redis:6379
+CURRENT_ENV=sandbox
+
+JWT_SECRET=<jwt_secret>
+
+#S3 Bucket
+S3_BUCKET_UTILS=r<bucket_utils>
+S3_BUCKET=<bucket>
+
+#SMTP Server
+MAIL_HOST=smtp.email.com.br
+MAIL_PORT=465
+MAIL_USER=<user>
+MAIL_PASS=<pass>
+MAIL_SENDER=noreply@email.com.br
+
+#ORM CONFIG
+ENTITY_CONFIG=dist/infra/db/entities/**/*.js
+MIGRATIONS_CONFIG=dist/infra/db/migrations/*.js
+ENTITIES_DIR=dist/infra/db/entities
+MIGRATIONS_DIR=dist/infra/db/migrations

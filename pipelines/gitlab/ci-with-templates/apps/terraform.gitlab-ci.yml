@@ -1,0 +1,57 @@
+# include:
+#   - template: Terraform/Base.gitlab-ci.yml 
+#   - template: Jobs/SAST-IaC.gitlab-ci.yml 
+
+variables:
+  TFVARS_FILE: ".tfvars"
+
+stages:
+  - validate
+  - test
+  - build
+  - deploy
+  - cleanup
+
+prepare_tfvars:
+  stage: prepare
+  script:
+    - if [ "$CI_COMMIT_TITLE" = "use_custom_tfvars" ]; then
+        cp custom.tfvars $TFVARS_FILE;
+      fi
+  artifacts:
+    paths:
+      - $TFVARS_FILE
+  only:
+    - triggers
+
+fmt:
+  extends: .terraform:fmt
+  needs: []
+
+validate:
+  extends: .terraform:validate
+  needs: []
+
+build:
+  extends: .terraform:build
+  environment:
+    name: $TF_STATE_NAME
+    action: prepare
+
+deploy:
+  extends: .terraform:deploy
+  rules:
+    - if: $CI_COMMIT_TITLE != "destroy"
+      when: on_success
+  dependencies:
+    - build
+  environment:
+    name: $TF_STATE_NAME
+
+cleanup:
+  extends: .terraform:destroy
+  environment:
+    name: $TF_STATE_NAME
+  rules:
+    - if: $CI_COMMIT_TITLE == "destroy"
+      when: on_success

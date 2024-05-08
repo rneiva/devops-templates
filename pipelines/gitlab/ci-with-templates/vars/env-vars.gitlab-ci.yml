@@ -1,0 +1,36 @@
+install-deps:
+  stage: install-deps
+  image:
+    name: gcr.io/google.com/cloudsdktool/google-cloud-cli:latest
+    entrypoint: [""]
+  script:
+    - |
+      case $CI_COMMIT_BRANCH in
+        "main")
+          echo "This job was triggered on branch $CI_COMMIT_BRANCH"
+          echo "Creating .env to Production..."
+          echo "$ENV_PRODUCTION" > .env.local
+          export $(cat .env.local | xargs)
+          ;;
+        "staging")
+          echo "This job was triggered on branch $CI_COMMIT_BRANCH"
+          echo "Creating .env to Staging..."
+          echo "$ENV_STAGING" > .env.local
+          export $(cat .env.local | xargs)
+          ;;
+        "qa")
+          echo "This job was triggered on branch $CI_COMMIT_BRANCH"
+          echo "Creating .env to QA..."
+          echo "$ENV_QA" > .env.local
+          export $(cat .env.local | xargs)
+          ;;
+        "dev")
+          echo "This job was triggered on branch $CI_COMMIT_BRANCH"
+          echo "Creating .env to DEV..."
+          echo "$ENV_DEVELOPMENT" > .env.local
+          export $(cat .env.local | xargs)
+          ;;
+      esac
+  artifacts:
+    reports:
+      dotenv: .env.local

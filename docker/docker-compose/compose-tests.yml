@@ -1,0 +1,57 @@
+services:
+  db:
+    image: postgres:latest
+    container_name: postgres-db
+    restart: on-failure
+    tty: true
+    ports:
+      - 5432:5432
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      TZ: ${TIMEZONE}
+
+  cache:
+    image: redis:6.2.6
+    restart: on-failure
+    container_name: redis-cache
+    ports:
+      - '6379:6379'
+    volumes:
+      - cachedata:/data
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+
+  dbtest:
+    image: postgres:alpine
+    container_name: postgres-dbtest
+    restart: always
+    tty: true
+    ports:
+      - '5433:5432'
+    volumes:
+      - dbdatatest:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      TZ: ${TIMEZONE}
+
+  cachetest:
+    image: redis:alpine
+    container_name: redis-cachetest
+    ports:
+      - '6380:6379'
+    volumes:
+      - cachedatatest:/data
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+
+volumes:
+  dbdata:
+  cachedata:
+  dbdatatest:
+  cachedatatest:

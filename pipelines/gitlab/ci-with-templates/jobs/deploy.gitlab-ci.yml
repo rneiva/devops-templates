@@ -1,0 +1,51 @@
+deploy:
+  stage: deploy
+  image:
+    name: <custom_image>/deploy
+  services:
+    - docker:20.10.15-dind
+  script:
+    - echo "Set up .env.local as per environment..."
+    - |
+      case $CI_COMMIT_BRANCH:$CI_MERGE_REQUEST_TARGET_BRANCH_NAME in
+        "main":*)
+          echo "This job was triggered on branch $CI_COMMIT_BRANCH"
+          echo "Creating .env to Production..."
+          echo "$ENV_PRODUCTION" > .env.local
+          export $(cat .env.local | xargs)
+          ;;
+        "staging":*)
+          echo "This job was triggered on branch $CI_COMMIT_BRANCH"
+          echo "Creating .env to Staging..."
+          echo "$ENV_STAGING" > .env.local
+          export $(cat .env.local | xargs)
+          ;;
+        "qa":*)
+          echo "This job was triggered on branch $CI_COMMIT_BRANCH"
+          echo "Creating .env to QA..."
+          echo "$ENV_QA" > .env.local
+          export $(cat .env.local | xargs)
+          ;;
+        "develop":*)
+          echo "This job was triggered on branch $CI_COMMIT_BRANCH"
+          echo "Creating .env to DEV..."
+          echo "$ENV_DEVELOP" > .env.local
+          export $(cat .env.local | xargs)
+          ;;
+      esac
+    - echo "Connecting to EKS cluster"
+    - aws eks --region ${AWS_REGION} update-kubeconfig --name ${EKS_NAME}
+    # - aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_NAME}    
+    - echo "Running PreFlight..."
+    - chmod +x preflight.sh && bash preflight.sh
+    - echo "Updating deployment..."
+    - kubectl config view
+    # - kubectl apply -k k8s
+    # - kubectl rollout restart deployment/${IMAGE_NAME} -n ${NAMESPACE}
+    - kubectl --kubeconfig ${KUBECONFIG} apply -k k8s
+    - kubectl --kubeconfig ${KUBECONFIG} rollout restart deployment/${IMAGE_NAME} -n ${NAMESPACE}
+  only:
+    - develop
+    - qa
+    - staging
+    - main

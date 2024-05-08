@@ -1,0 +1,44 @@
+version: '3.3'
+services:
+  api:
+    image: ${DOCKER_REGISTRY}/${APP_NAME}:${IMAGE_NAME}-${TAG_LATEST}
+    networks:
+     - myapp
+     - traefik-public
+    logging:
+      driver: json-file
+    deploy:
+      labels:
+        traefik.http.routers.myapp-server-http.rule: Host(`myapp.com.br`)
+        traefik.http.routers.myapp-server-https.rule: Host(`myapp.com.br`)
+        traefik.http.routers.myapp-server-https.entrypoints: https
+        traefik.http.routers.myapp-server-https.tls: 'true'
+        traefik.http.routers.myapp-server-http.entrypoints: http
+        traefik.http.services.myapp-server.loadbalancer.server.port: '5050'
+        traefik.constraint-label: traefik-public
+        traefik.http.routers.myapp-server-http.middlewares: https-redirect
+        traefik.http.routers.myapp-server-https.tls.certresolver: le
+        traefik.docker.network: traefik-public
+        traefik.enable: 'true'
+      update_config:
+        delay: 50s
+        failure_action: rollback
+        
+  redis:
+    hostname: redis
+    image: redis:latest
+    networks:
+     - myapp
+    logging:
+      driver: json-file
+    volumes:
+    - redis:/data
+  
+volumes:
+    redis:
+
+networks:
+  myapp:
+    driver: overlay
+  traefik-public:
+    external: true

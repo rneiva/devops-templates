@@ -1,0 +1,12 @@
+gcloud:
+  stage: gcloud
+  image:
+    name: gcr.io/google.com/cloudsdktool/google-cloud-cli:latest
+    entrypoint: [""]
+  services:
+    - docker:dind
+  script:
+    - echo "Configuring Google Credentials"
+    - echo ${GOOGLE_CREDENTIALS_JSON} > $CI_PIPELINE_ID.json
+    - gcloud auth activate-service-account --key-file $CI_PIPELINE_ID.json
+    - gcloud config set project ${PROJECT_ID}

@@ -1,0 +1,45 @@
+build:
+  stage: build
+  image:
+    name: registry.gitlab.com/gitlab-org/cluster-integration/auto-build-image:v0.4.0
+    entrypoint: [""]
+  services:
+    - docker:dind
+  script:
+    - echo "Set up .env.local & accept all MR's..."
+    - |
+      if [[ "$CI_COMMIT_BRANCH:$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" == "main:"* ]]; then
+          echo "This job was triggered on branch $CI_COMMIT_BRANCH"
+          echo "Creating .env to Production..."
+          echo "$ENV_PRODUCTION" > .env.local
+          export $(cat .env.local | xargs)
+      elif [[ "$CI_COMMIT_BRANCH:$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" == "staging:"* ]]; then
+          echo "This job was triggered on branch $CI_COMMIT_BRANCH"
+          echo "Creating .env to Staging..."
+          echo "$ENV_STAGING" > .env.local
+          export $(cat .env.local | xargs)
+      elif [[ "$CI_COMMIT_BRANCH:$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" == "qa:"* ]]; then
+          echo "This job was triggered on branch $CI_COMMIT_BRANCH"
+          echo "Creating .env to QA..."
+          echo "$ENV_QA" > .env.local
+          export $(cat .env.local | xargs)
+      elif [[ "$CI_COMMIT_BRANCH:$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" == "develop:"* ]]; then
+          echo "This job was triggered on branch $CI_COMMIT_BRANCH"
+          echo "Creating .env to Development..."
+          echo "$ENV_DEVELOP" > .env.local
+          export $(cat .env.local | xargs)
+      fi
+    - echo "Docker Login"
+    - aws ecr get-login-password --region ${AWS_REGION} | docker login --username ${CI_REGISTRY_USERNAME} --password-stdin ${CI_REGISTRY}
+    - echo "Building image..."
+    - docker build -t ${IMAGE_NAME} .
+    - docker tag ${IMAGE_NAME} ${CI_REGISTRY}/${ECR_NAME}:${IMAGE_NAME}-${CI_COMMIT_SHA}
+    - docker tag ${IMAGE_NAME} ${CI_REGISTRY}/${ECR_NAME}:${IMAGE_NAME}-${TAG_LATEST}
+    - echo "Pushing image..."
+    - docker push ${CI_REGISTRY}/${ECR_NAME}:${IMAGE_NAME}-${CI_COMMIT_SHA}
+    - docker push ${CI_REGISTRY}/${ECR_NAME}:${IMAGE_NAME}-${TAG_LATEST}
+  only:
+    - develop
+    - qa
+    - staging
+    - main
