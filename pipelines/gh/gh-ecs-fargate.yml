@@ -1,0 +1,149 @@
+name: ECS Fargate CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "backend/**"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-push:
+    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set ECR repository URI based on branch
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            echo "REPOSITORY_URI=************.dkr.ecr.ap-northeast-1.amazonaws.com/ecr-dev" >> $GITHUB_ENV
+          else
+            echo "REPOSITORY_URI=************.dkr.ecr.ap-northeast-1.amazonaws.com/ecr-prod" >> $GITHUB_ENV
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ap-northeast-1
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_TO_ASSUME }}
+          role-session-name: GitHubActions
+          role-duration-seconds: 3600
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker Image
+        run: docker build -t ${{ env.REPOSITORY_URI }}:${{ github.sha }} -f ./backend/Dockerfile.ecs ./backend
+
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REPOSITORY_URI }}:${{ github.sha }}
+          format: "table"
+          severity: "CRITICAL,HIGH"
+          exit-code: 1
+
+      - name: Check Docker best practices with Dockle
+        uses: erzz/dockle-action@v1
+        with:
+          image: ${{ env.REPOSITORY_URI }}:${{ github.sha }}
+          failure-threshold: fatal
+          exit-code: 1
+
+      - name: Push to ECR
+        if: success()
+        run: docker push ${{ env.REPOSITORY_URI }}:${{ github.sha }}
+
+      - name: Notify Slack on success
+        if: success()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_INCOMING_WEBHOOK_URL }}
+          SLACK_COLOR: "#36A64F"
+          SLACK_MESSAGE: "Security scans have completed successfully. All checks passed."
+          SLACK_TITLE: "Security Scan Completed"
+
+      - name: Notify Slack on failure
+        if: failure()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_INCOMING_WEBHOOK_URL }}
+          SLACK_COLOR: "danger"
+          SLACK_MESSAGE: "A critical error has occurred in the build or security scan process. Please check the GitHub Actions logs for more details."
+          SLACK_TITLE: "Build or Security Scan Failed"
+
+  deploy:
+    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ap-northeast-1
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_TO_ASSUME }}
+          role-session-name: GitHubActions
+          role-duration-seconds: 3600
+
+      - name: Download ecspresso
+        uses: kayac/ecspresso@v2
+        with:
+          version: v2.3.3
+
+      - name: Setup environment
+        run: |
+          echo "IMAGE_TAG=${{ github.sha }}" >> $GITHUB_ENV
+          if [[ ${{ github.ref }} == 'refs/heads/develop' ]]; then
+            echo "working_directory=./backend/ecspresso/dev" >> $GITHUB_ENV
+            echo "ENV=${{ secrets.ENV_DEV }}" >> $GITHUB_ENV
+            echo "COGNITO_USER_POOL_ID=${{ secrets.COGNITO_USER_POOL_ID_DEV }}" >> $GITHUB_ENV
+            echo "S3_URL=${{ secrets.S3_URL_DEV }}" >> $GITHUB_ENV
+            echo "SLACK_MENTIONS=" >> $GITHUB_ENV
+            echo "SLACK_TITLE_PREFIX=Develop" >> $GITHUB_ENV
+          else
+            echo "working_directory=./backend/ecspresso/prod" >> $GITHUB_ENV
+            echo "ENV=${{ secrets.ENV_PROD }}" >> $GITHUB_ENV
+            echo "COGNITO_USER_POOL_ID=${{ secrets.COGNITO_USER_POOL_ID_PROD }}" >> $GITHUB_ENV
+            echo "S3_URL=${{ secrets.S3_URL_PROD }}" >> $GITHUB_ENV
+            echo "SLACK_MENTIONS=<@***********>" >> $GITHUB_ENV
+            echo "SLACK_TITLE_PREFIX=Production" >> $GITHUB_ENV
+          fi
+
+      - name: Deploy to ECS service
+        run: ecspresso deploy --config ecspresso.yml
+        working-directory: ${{ env.working_directory }}
+        env:
+          ENV: ${{ env.ENV }}
+          COGNITO_USER_POOL_ID: ${{ env.COGNITO_USER_POOL_ID }}
+          S3_URL: ${{ env.S3_URL }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+
+      - name: Set Slack message and title on success
+        if: success()
+        run: |
+          echo "SLACK_COLOR=good" >> $GITHUB_ENV
+          echo "SLACK_TITLE_SUFFIX=(${{ github.ref_name }}) on ECS Fargate Deployment Success" >> $GITHUB_ENV
+
+      - name: Set Slack message and title on failure
+        if: failure()
+        run: |
+          echo "SLACK_COLOR=danger" >> $GITHUB_ENV
+          echo "SLACK_TITLE_SUFFIX=(${{ github.ref_name }}) on ECS Fargate Deployment Failure" >> $GITHUB_ENV
+
+      - name: Notify Slack about deployment status
+        if: always()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_INCOMING_WEBHOOK_URL }}
+          SLACK_COLOR: ${{ env.SLACK_COLOR }}
+          SLACK_MESSAGE: ${{ env.SLACK_MENTIONS }}
+          SLACK_TITLE: ${{ env.SLACK_TITLE_PREFIX }} ${{ env.SLACK_TITLE_SUFFIX }}
